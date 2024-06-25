@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net8.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Keccak256"/>
+        <PackageReference Include="Multiformats.Base"/>
+        <PackageReference Include="Multiformats.Hash"/>
+        <PackageReference Include="NBitcoin.Secp256k1"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\Lantern.Discv5.Rlp\Lantern.Discv5.Rlp.csproj" />
+    </ItemGroup>
+
+
+
+
+</Project>
