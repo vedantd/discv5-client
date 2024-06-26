@@ -1,5 +1,5 @@
 ﻿using System;
-using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -37,11 +37,15 @@ class Program
         var services = new ServiceCollection();
         services.AddLogging(config => config.AddConsole());
         services.AddSingleton(enr);
+
+        var customHandler = new CustomHandler(); // Your custom handler
+
         var builder = new Discv5ProtocolBuilder(services)
             .WithConnectionOptions(connectionOptions)
             .WithTableOptions(tableOptions)
             .WithSessionOptions(sessionOptions)
-            .WithEnrBuilder(enr);
+            .WithEnrBuilder(enr)
+            .WithTalkResponder(customHandler); // Set your custom talk responder here
 
         var serviceProvider = services.BuildServiceProvider();
         var discv5Protocol = builder.Build();
@@ -59,7 +63,7 @@ class Program
             var allNodes = discv5Protocol.GetAllNodes;
             var activeNodes = discv5Protocol.GetActiveNodes;
 
-            Console.WriteLine("There are {0} nodes in which {1} are active.", allNodes.Count(), activeNodes.Count());
+            Console.WriteLine($"There are {allNodes.Count()} nodes, of which {activeNodes.Count()} are active.");
 
             foreach (var node in activeNodes)
             {
@@ -69,6 +73,22 @@ class Program
                 foreach (var foundEnr in nodes)
                 {
                     Console.WriteLine($"Found node with ENR: {foundEnr}");
+
+                    var protocol = Encoding.UTF8.GetBytes("custom");
+                    var request = Encoding.UTF8.GetBytes("Hello from client");
+                    var success = await discv5Protocol.SendTalkReqAsync(foundEnr, protocol, request);
+
+                    if (success)
+                    {
+                        Console.WriteLine("TALKREQ sent successfully.");
+                        // TO:DO Handle talk response
+                       
+
+                    }
+                    else
+                    {
+                        Console.WriteLine("Failed to send TALKREQ.");
+                    }
                 }
             }
         }
