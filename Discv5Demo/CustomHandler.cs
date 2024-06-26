@@ -1,5 +1,4 @@
 using Lantern.Discv5.WireProtocol.Messages;
-using Lantern.Discv5.WireProtocol.Messages.Requests;
 using System.Text;
 
 
@@ -13,6 +12,7 @@ public class CustomHandler : ITalkReqAndRespHandler
 
     public byte[] HandleResponse(byte[] response)
     {
+        Console.WriteLine("Received TalkResp: {0}", Encoding.UTF8.GetString(response));
         return response;
     }
 }
