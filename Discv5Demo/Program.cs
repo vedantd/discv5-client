@@ -82,7 +82,15 @@ class Program
                     {
                         Console.WriteLine("TALKREQ sent successfully.");
                         // TO:DO Handle talk response
-                       
+
+                         // Log the response if available
+                        if (customHandler.LastResponse != null)
+                        {
+                            Console.WriteLine("Received TalkResp new: {0}", customHandler.LastResponse);
+                        }
+                        else{
+                            Console.WriteLine("No response received.");
+                        }
 
                     }
                     else
