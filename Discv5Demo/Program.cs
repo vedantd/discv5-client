@@ -51,7 +51,6 @@ class Program
         var discv5Protocol = builder.Build();
 
         var logger = serviceProvider.GetRequiredService<ILogger<Program>>();
-
         try
         {
             await discv5Protocol.InitAsync();
@@ -62,9 +61,6 @@ class Program
 
             var allNodes = discv5Protocol.GetAllNodes;
             var activeNodes = discv5Protocol.GetActiveNodes;
-
-            Console.WriteLine($"There are {allNodes.Count()} nodes, of which {activeNodes.Count()} are active.");
-
             foreach (var node in activeNodes)
             {
                 var nodes = await discv5Protocol.SendFindNodeAsync(node, randomNodeId);
@@ -81,16 +77,10 @@ class Program
                     if (success)
                     {
                         Console.WriteLine("TALKREQ sent successfully.");
-                        // TO:DO Handle talk response
-
-                         // Log the response if available
-                        if (customHandler.LastResponse != null)
-                        {
-                            Console.WriteLine("Received TalkResp new: {0}", customHandler.LastResponse);
-                        }
-                        else{
-                            Console.WriteLine("No response received.");
-                        }
+                        allNodes = discv5Protocol.GetAllNodes;
+                       
+                        activeNodes = discv5Protocol.GetActiveNodes;
+                        Console.WriteLine($"There are {allNodes.Count()} nodes, of which {activeNodes.Count()} are active.");
 
                     }
                     else
