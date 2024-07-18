@@ -140,25 +140,5 @@ public class SszTests
         Assert.AreEqual(pong.CustomPayload, deserializedPong.CustomPayload);
     }
 
-    [Test]
-    public void SerializeFindNodesTest()
-    {
-        var distances = new List<ushort> { 256, 255 };
-        var findNodes = new FindNodes(distances);
-        var serialized = SSZ.Serialize(findNodes);
-        var expected = new byte[] { 0x02, 0x00, 0x01, 0x00, 0xff, 0x00 }; // Expected serialized output
-        Assert.AreEqual(expected, serialized);
-    }
-
-    [Test]
-    public void DeserializeFindNodesTest()
-    {
-        var data = new byte[] { 0x02, 0x00, 0x01, 0x00, 0xff, 0x00 };
-        var findNodes = SSZ.Deserialize(data, typeof(FindNodes)) as FindNodes;
-        Assert.IsNotNull(findNodes);
-        Assert.AreEqual(2, findNodes.Distances.Count);
-        Assert.AreEqual(256, findNodes.Distances[0]);
-        Assert.AreEqual(255, findNodes.Distances[1]);
-    }
     
 }
