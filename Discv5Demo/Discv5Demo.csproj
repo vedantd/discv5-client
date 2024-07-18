@@ -4,6 +4,8 @@
     <ProjectReference Include="..\src\Lantern.Discv5.Enr\Lantern.Discv5.Enr.csproj" />
     <ProjectReference Include="..\src\Lantern.Discv5.Rlp\Lantern.Discv5.Rlp.csproj" />
     <ProjectReference Include="..\src\Lantern.Discv5.WireProtocol\Lantern.Discv5.WireProtocol.csproj" />
+    <ProjectReference Include="..\nethermind\src\Nethermind\Nethermind.Serialization.Ssz\Nethermind.Serialization.Ssz.csproj" />
+
   </ItemGroup>
 
   <PropertyGroup>
