@@ -1,39 +1,52 @@
 using Lantern.Discv5.WireProtocol.Messages;
-using System.Text;
-
+using System;
 
 public class CustomHandler : ITalkReqAndRespHandler
 {
-    public byte[][] HandleRequest(byte[] protocol, byte[] request)
+    private const ushort PROTOCOL_ID = 0x500A; // Execution State Network
+
+    public byte[][]? HandleRequest(byte[] protocol, byte[] request)
     {
-        // Deserialize the request and handle it accordingly
-        // var messageUnion = SSZ.Deserialize<MessageUnion>(request);
-        // if (messageUnion != null && messageUnion.Selector == 0)
-        // {
-        //     // Handle Ping message
-        //     var pingMessage = (Ping)messageUnion.Value;
-        //     // Respond with a Pong message
-        //     var pongMessage = new Pong(pingMessage.EnrSeq, pingMessage.CustomPayload);
-        //     var responseUnion = new MessageUnion(1, pongMessage);
-        //     var serializedResponse = SSZ.Serialize(responseUnion);
-        //     return new[] { serializedResponse };
-        // }
-        return new[] { request };
+        if (BitConverter.ToUInt16(protocol, 0) == PROTOCOL_ID)
+        {
+            var messageUnion = (MessageUnion)SSZ.Deserialize(request, typeof(MessageUnion));
+            if (messageUnion.Selector == 0) // Ping
+            {
+                var ping = (Ping)messageUnion.Value;
+                Console.WriteLine($"Received Ping with ENR sequence number: {ping.EnrSeq}");
+                
+                // Create and serialize Pong response
+                var pong = new Pong(ping.EnrSeq, ping.CustomPayload);
+                var pongMessage = new MessageUnion(1, pong);
+                var serializedResponse = SSZ.Serialize(pongMessage);
+                return new byte[][] { serializedResponse };
+            }
+            else
+            {
+                Console.WriteLine("Received unexpected message type");
+                return null;
+            }
+        }
+        else
+        {
+            Console.WriteLine($"Received request with unknown protocol: 0x{BitConverter.ToUInt16(protocol, 0):X4}");
+            return null;
+        }
     }
 
-    public byte[] HandleResponse(byte[] response)
+    public byte[]? HandleResponse(byte[] response)
     {
-        // Deserialize the response and handle it accordingly
-        // var messageUnion = SSZ.Deserialize<MessageUnion>(response);
-        // if (messageUnion != null && messageUnion.Selector == 1)
-        // {
-        //     // Handle Pong message
-        //     var pongMessage = (Pong)messageUnion.Value;
-        //     LastResponse = $"Pong received: ENR Seq {pongMessage.EnrSeq}";
-        //     Console.WriteLine(LastResponse);
-        // }
-        return response;
+        var messageUnion = (MessageUnion)SSZ.Deserialize(response, typeof(MessageUnion));
+        if (messageUnion.Selector == 1) // Pong
+        {
+            var pong = (Pong)messageUnion.Value;
+            Console.WriteLine($"Received Pong with ENR sequence number: {pong.EnrSeq}");
+            return response;
+        }
+        else
+        {
+            Console.WriteLine("Received unexpected response type");
+            return null;
+        }
     }
-
-    public string? LastResponse { get; private set; }
 }

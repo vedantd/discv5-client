@@ -11,8 +11,12 @@ using Lantern.Discv5.WireProtocol.Session;
 using Lantern.Discv5.WireProtocol.Table;
 using Lantern.Discv5.WireProtocol.Utility;
 
+
+
 class Program
 {
+    private const ushort PROTOCOL_ID = 0x500A; // Execution State Network
+
     static async Task Main()
     {
         var bootstrapEnrs = new[]
@@ -38,65 +42,82 @@ class Program
         services.AddLogging(config => config.AddConsole());
         services.AddSingleton(enr);
 
-        var customHandler = new CustomHandler(); // Your custom handler
+        var customHandler = new CustomHandler();
 
         var builder = new Discv5ProtocolBuilder(services)
             .WithConnectionOptions(connectionOptions)
             .WithTableOptions(tableOptions)
             .WithSessionOptions(sessionOptions)
             .WithEnrBuilder(enr)
-            .WithTalkResponder(customHandler); // Set your custom talk responder here
+            .WithTalkResponder(customHandler);
 
         var serviceProvider = services.BuildServiceProvider();
         var discv5Protocol = builder.Build();
 
         var logger = serviceProvider.GetRequiredService<ILogger<Program>>();
         try
-        {
-            await discv5Protocol.InitAsync();
-
-            // Perform node discovery or other operations
-            var randomNodeId = RandomUtility.GenerateRandomData(32);
-            await discv5Protocol.DiscoverAsync(randomNodeId);
-
-            var allNodes = discv5Protocol.GetAllNodes;
-            var activeNodes = discv5Protocol.GetActiveNodes;
-            foreach (var node in activeNodes)
             {
-                var nodes = await discv5Protocol.SendFindNodeAsync(node, randomNodeId);
-                if (nodes == null) continue;
+                await discv5Protocol.InitAsync();
 
-                foreach (var foundEnr in nodes)
+                var randomNodeId = RandomUtility.GenerateRandomData(32);
+                await discv5Protocol.DiscoverAsync(randomNodeId);
+
+                var activeNodes = discv5Protocol.GetActiveNodes;
+                foreach (var node in activeNodes)
                 {
-                    Console.WriteLine($"Found node with ENR: {foundEnr}");
+                    var foundNodes = await discv5Protocol.SendFindNodeAsync(node, randomNodeId);
+                    if (foundNodes == null) continue;
 
-                    var protocol = Encoding.UTF8.GetBytes("custom");
-                    var request = Encoding.UTF8.GetBytes("Hello from client");
-                    var success = await discv5Protocol.SendTalkReqAsync(foundEnr, protocol, request);
-
-                    if (success)
+                    foreach (var foundEnr in foundNodes)
                     {
-                        Console.WriteLine("TALKREQ sent successfully.");
-                        allNodes = discv5Protocol.GetAllNodes;
-                       
-                        activeNodes = discv5Protocol.GetActiveNodes;
-                        Console.WriteLine($"There are {allNodes.Count()} nodes, of which {activeNodes.Count()} are active.");
+                        Console.WriteLine($"Found node with ENR: {foundEnr}");
 
-                    }
-                    else
-                    {
-                        Console.WriteLine("Failed to send TALKREQ.");
+                        var protocol = BitConverter.GetBytes(PROTOCOL_ID);
+                        
+                        // Create and serialize Ping message
+                        var customPayload = new byte[32]; // Initialize with appropriate data
+                        var ping = new Ping(1, customPayload); // Example ENR seq number and custom payload
+                        var pingMessage = new MessageUnion(0, ping);
+                        var request = SSZ.Serialize(pingMessage);
+
+                        var response = await discv5Protocol.SendTalkReqAsync(foundEnr, protocol, request);
+
+                        if (response != null)
+                        {
+                            Console.WriteLine("TALKREQ sent successfully and received response.");
+                            // var responseMessage = (MessageUnion)SSZ.Deserialize(response, typeof(MessageUnion));
+                            // if (responseMessage.Selector == 1) // Pong
+                            // {
+                            //     var pong = (Pong)responseMessage.Value;
+                            //     Console.WriteLine($"Received Pong with ENR sequence number: {pong.EnrSeq}");
+                                
+                            //     // Process the custom payload if needed
+                            //     // var receivedCustomPayload = pong.CustomPayload;
+                            //     // Process receivedCustomPayload as needed
+                            // }
+                            // else
+                            // 
+                            //     Console.WriteLine("Received unexpected response type");
+                            // }
+
+                            var allNodes = discv5Protocol.GetAllNodes;
+                            activeNodes = discv5Protocol.GetActiveNodes;
+                            Console.WriteLine($"There are {allNodes.Count()} nodes, of which {activeNodes.Count()} are active.");
+                        }
+                        else
+                        {
+                            Console.WriteLine("Failed to send TALKREQ or receive response.");
+                        }
                     }
                 }
             }
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "An error occurred during discovery.");
-        }
-        finally
-        {
-            await discv5Protocol.StopAsync();
-        }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "An error occurred during discovery.");
+            }
+            finally
+            {
+                await discv5Protocol.StopAsync();
+            }
     }
 }
